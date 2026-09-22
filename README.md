@@ -27,6 +27,19 @@ tarefa.
 | `references/brick.md` | Payment Brick (SDK JS v2): inicialização, callbacks, meios de pagamento e parcelas |
 | `references/testes.md` | Cartões de teste, códigos que forçam aprovação e recusa, contas de teste |
 
+### `mercadopago-mcp-server`
+
+Instalar, autenticar e usar o MCP Server oficial do Mercado Pago
+(`https://mcp.mercadopago.com/mcp`) em Claude Code, Claude Desktop, Cursor, VS
+Code, Windsurf ou Cline.
+
+| Arquivo | Conteúdo |
+|---|---|
+| `SKILL.md` | Transporte que funciona, as 11 ferramentas e o que cada uma faz com a conta |
+| `references/instalacao.md` | Comando por cliente, formato do arquivo de configuração e as armadilhas do Windows |
+| `references/ferramentas.md` | Parâmetros e tipos de cada ferramenta, separadas entre leitura, exposição de segredo e escrita |
+| `references/diagnostico.md` | Roteiro para quando o conector não aparece, e como falar com o servidor sem cliente nenhum |
+
 ## Instalação
 
 Copie a pasta da skill para onde seu agente procura skills.
