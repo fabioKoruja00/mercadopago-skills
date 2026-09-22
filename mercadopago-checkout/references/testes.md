@@ -38,6 +38,21 @@ recebe usuário, senha e código de verificação de 6 dígitos.
 Logado como conta de teste, você não enxerga "Credenciais de Teste" nem
 "Qualidade da Integração".
 
+## Checkout Bricks não aceita conta de teste
+
+A documentação avisa em destaque: **integrações com Checkout Bricks não suportam
+contas de teste**. Criar vendedor e comprador de teste e cobrar com o token
+deles devolve `401` com `code: 7`, "Unauthorized use of live credentials" — a
+mensagem não diz a causa real, e faz procurar erro de credencial onde não há.
+
+Com Bricks, o teste é feito com as **credenciais de teste da aplicação**
+(prefixo `TEST-`, na aba *Credenciais de teste* do painel) mais os cartões de
+teste desta página.
+
+Cuidado para não confundir com o que algumas ferramentas chamam de "sandbox": o
+token de um usuário de teste criado automaticamente vem com prefixo `APP_USR-`
+e **não** substitui a credencial de teste da aplicação.
+
 ## Qual credencial usar
 
 | Cenário | Credencial |
