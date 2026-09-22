@@ -38,6 +38,31 @@ recebe usuário, senha e código de verificação de 6 dígitos.
 Logado como conta de teste, você não enxerga "Credenciais de Teste" nem
 "Qualidade da Integração".
 
+## Três credenciais que parecem a mesma
+
+Confundi-las custa horas, porque o erro não diz qual está errada.
+
+| Credencial | Onde | Prefixo | Para quê |
+|---|---|---|---|
+| Produção da conta real | Aplicação > Credenciais de produção | `APP_USR-` | cobrar de verdade |
+| **Teste da conta real** | Aplicação > **Detalhes da aplicação > Credenciais**, ou *Seu negócio > Configurações > Gestão e Administração > Credenciais* | `TEST-` | **testar cartão, PIX e boleto** |
+| Produção da conta de **teste** | dados do usuário de teste criado no painel | `APP_USR-` | fluxos de redirecionamento e carteira |
+
+A terceira engana: vem com o mesmo prefixo da primeira e é oferecida junto das
+contas de teste, o que faz parecer a credencial de teste. **Não é.** Usá-la em
+`POST /v1/payments` devolve:
+
+```json
+{"message":"Unauthorized use of live credentials","error":"unauthorized","status":401,"cause":[{"code":7}]}
+```
+
+A mensagem sugere problema de permissão ou de ambiente, e não há nada errado com
+o token — ele autentica normalmente em `GET /users/me`. O que falta é ser a
+credencial certa para o tipo de teste.
+
+A documentação é direta: para testar cartão é preciso **trocar as credenciais de
+produção da conta de teste vendedora pelas credenciais de teste da conta real**.
+
 ## Checkout Bricks não aceita conta de teste
 
 A documentação avisa em destaque: **integrações com Checkout Bricks não suportam
