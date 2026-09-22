@@ -37,15 +37,23 @@ pagamento, é descartável. Pagamento órfão, sem pedido, é dinheiro cobrado s
 registro de quem comprou o quê. Mande o identificador do pedido em
 `external_reference`: é o que liga os dois depois.
 
-**4. `X-Idempotency-Key` é obrigatório e deve ser guardado com o pedido.** Gerar
-um UUID novo a cada tentativa transforma retry em cobrança dupla. A chave vive
-no pedido, não na requisição.
+**4. `X-Idempotency-Key` pertence à TENTATIVA, não ao pedido nem à requisição.**
+Distinga dois casos que parecem iguais:
 
-**5. O webhook é a fonte de verdade, e não se confia no corpo dele.** Valide a
-assinatura, depois **busque o pagamento na API** e confira valor, moeda e
-`external_reference` antes de mudar qualquer estado. O corpo da notificação
-carrega só o identificador; tratá-lo como o estado é aceitar o que um
-desconhecido mandou.
+- **Retry técnico** — o POST deu timeout ou erro de transporte e você não sabe
+  se a cobrança aconteceu. Repita **a mesma chave com o mesmo corpo**. É o que
+  impede a cobrança dupla.
+- **Nova tentativa do comprador** — o pagamento foi recusado e ele tenta de
+  novo. Corpo diferente, token novo, **chave nova**. Reusar a chave aqui devolve
+  erro, porque o corpo diverge do da primeira chamada.
+
+Modele tentativas de pagamento ligadas ao pedido; a chave e o corpo enviado
+ficam gravados na tentativa, antes do POST. Um pedido pode ter várias.
+
+**5. O webhook é GATILHO; a fonte de verdade é o `GET /v1/payments/{id}`.**
+Valide a assinatura, busque o pagamento na API e confira valor, moeda e
+`external_reference` antes de mudar qualquer estado. O corpo traz metadados
+(tipo, ação, data, modo), mas nenhum estado em que se possa fechar um pedido.
 
 ## Estado do pedido
 
@@ -58,9 +66,13 @@ A notificação **chega repetida e fora de ordem**. Para resistir aos dois:
 - só aplique se a data recebida for **mais recente** que a guardada;
 - **e** se a transição existir na sua tabela.
 
-Só a data deixa passar a notificação repetida, que chega com data igual. Só a
-tabela deixa passar a antiga. Precisa dos dois. `pago → estornado` é válido;
-`pago → aguardando` não.
+Comparação estrita (`recebida <= guardada` não aplica) já descarta a repetida e
+a atrasada. A tabela existe para outro risco: duas notificações do mesmo
+pagamento processadas **ao mesmo tempo**, cada uma lendo o estado antes da
+outra gravar. `pago → estornado` é válido; `pago → aguardando` não.
+
+A leitura do estado, a decisão e a gravação têm de acontecer numa **transação**
+(ou com trava por pedido). Fora dela, a tabela não protege: as duas passam.
 
 ## Armadilhas que derrubam em produção
 
@@ -70,11 +82,13 @@ tabela deixa passar a antiga. Precisa dos dois. `pago → estornado` é válido;
 | Assinatura só falha em produção | segredo de teste e de produção são **diferentes** por aplicação | pegar o segredo do ambiente ativo, não reusar |
 | Cobrança dupla no retry | `X-Idempotency-Key` nova a cada tentativa | chave presa ao pedido |
 | Valor 100× errado | tratado como centavos | reais, decimal |
-| Pedido não fecha com pagamento aprovado | só `status` foi olhado | `approved` pode vir com `status_detail` que exige ação; ver `references/pagamentos.md` |
+| Reembolso parcial some do pedido | `approved` tratado como valor cheio | `approved/accredited` libera; `approved/partially_refunded` exige atualizar o valor devolvido |
+| Estado novo do provedor libera pedido | `switch` com `default` otimista | valor desconhecido é estado **não conclusivo**: registre e reconcilie, nunca libere |
 | Webhook nunca chega em dev | o Mercado Pago não alcança localhost | túnel público, ou o botão de simular no painel |
 | 404 a cada notificação | `merchant_order` tratado como pagamento | filtrar `type == 'payment'` |
 | Token de cartão recusado no retry | token do front é de uso único | token novo a cada tentativa |
-| Boleto "demora demais" | compensação bancária leva até 3 dias úteis | não é bug; avisar o comprador |
+| Boleto "demora demais" | confirmação não é instantânea após o pagamento | não é bug; ver o prazo em `references/pix-boleto.md` |
+| Assinatura válida reaproveitada depois | `ts` do header não conferido | rejeitar fora de uma janela de tolerância; HMAC válido sem prazo vale para sempre |
 | Estorno não reflete | `refunded`/`charged_back` tratados como "não aprovado" | são estados próprios, com efeito próprio |
 
 ## Segurança

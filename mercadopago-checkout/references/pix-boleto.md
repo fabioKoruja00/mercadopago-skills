@@ -38,9 +38,17 @@ PSP. Nunca libere pelo relógio do front: consulte o estado na API.
 Nasce com status `pending`. A URL do boleto vem em
 `transaction_details.external_resource_url`.
 
-Expiração padrão **3 dias**, ajustável de 1 a 30. A aprovação leva até 2 horas
-úteis depois do pagamento — por isso 3 dias é o mínimo recomendado. Boleto não
-pago após o vencimento gera devolução automática ao comprador.
+São **dois prazos diferentes**, e confundi-los gera expectativa errada:
+
+- **Vencimento** — quanto tempo o comprador tem para pagar. Padrão **3 dias**,
+  ajustável de 1 a 30 por `date_of_expiration`.
+- **Compensação** — quanto tempo o pagamento leva para ser reconhecido **depois**
+  de pago. A documentação cita até 2 horas úteis; na prática varia com o banco.
+  Não derive o vencimento desse prazo.
+
+Boleto não pago simplesmente **expira** (`cancelled` / `expired`) — não há valor
+a devolver. O que gera devolução é o boleto **pago após o vencimento**, caso em
+que o valor volta ao comprador e o pedido não deve ser liberado.
 
 ## Fontes
 

@@ -4,13 +4,22 @@
 
 | Header | Observação |
 |---|---|
-| `Authorization: Bearer <ACCESS_TOKEN>` | token de produção começa com `APP_USR-`; o de teste, com `TEST-` |
+| `Authorization: Bearer <ACCESS_TOKEN>` | o prefixo (`APP_USR-`, `TEST-`) serve de diagnóstico, **não** para decidir o ambiente — conta de teste também emite credencial de produção |
 | `Content-Type: application/json` | |
 | `X-Idempotency-Key: <UUID>` | obrigatório para pagamentos e reembolsos desde 09/01/2024 |
 
-Repetir a mesma chave não cria segundo pagamento. Respostas do fluxo de
-idempotência: **409** enquanto a primeira ainda processa, **422** quando a chave
-já foi usada com corpo divergente. Tempo de retenção da chave: não publicado.
+Repetir a mesma chave **com o mesmo corpo** não cria segundo pagamento — é como
+se sobrevive a um timeout sem cobrar duas vezes.
+
+Repetir a chave **com corpo diferente** é erro: uma nova tentativa do comprador,
+com token novo, precisa de chave nova.
+
+Os códigos de conflito documentados (409 enquanto a primeira processa, 422 para
+chave reutilizada com corpo divergente) estão descritos na documentação de
+idempotência do Wallet Connect. Trate a resposta pelo código e corpo que
+chegarem, sem assumir que o contrato é idêntico em `/v1/payments`.
+
+Tempo de retenção da chave: não publicado.
 
 ## Corpo
 
@@ -49,10 +58,13 @@ renderizada por JavaScript e não sai em fetch simples.
 | `rejected` | rejeitado |
 | `cancelled` | cancelado ou expirado |
 | `refunded` | reembolsado |
-| `charged_back` | estorno do cartão |
+| `charged_back` | contestação revertida pelo emissor (chargeback) — não confundir com `refunded`, que é devolução feita pelo lojista |
 | `in_mediation` | em disputa |
 
 ## status_detail por status
+
+Lista **não exaustiva** — o provedor acrescenta valores. Valor desconhecido é
+estado não conclusivo: registre e reconcilie, nunca libere o pedido por padrão.
 
 - `approved` → `accredited`, `partially_refunded`
 - `authorized` → `pending_capture`

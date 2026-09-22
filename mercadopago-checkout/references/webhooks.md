@@ -39,36 +39,69 @@ com o `v1`. Comparação com `==` vaza informação por tempo de resposta.
 
 ### O ponto que mais derruba
 
-A notificação traz `data.id` **na query** (`?data.id=…&type=payment`) e também
-no corpo, e as duas grafias podem divergir. O exemplo oficial em PHP usa
-`$_GET['data_id']`; parte das implementações usa o do corpo.
+O `data.id` do manifesto é o que chega **na query** (`?data.id=…&type=payment`).
+O exemplo oficial em PHP lê de `$_GET`.
 
-Não aposte: monte o manifesto com **cada candidato** e aceite se algum bater.
-Todos passam pelo mesmo HMAC com o mesmo segredo, então testar mais de um não
-enfraquece a validação — só evita recusar notificação legítima.
+O que varia é **o nome da chave que o seu framework expõe** — `data.id`,
+`data_id`, aninhado sob `data` —, não a fonte. Resolva lendo a query direito.
 
 Normalize o id para minúsculas antes de montar o manifesto.
+
+Aceitar também o id do corpo como candidato não abre brecha (todo candidato
+passa pelo mesmo HMAC, e sem o segredo nenhum bate), mas é tolerar uma
+divergência que não deveria existir. Prefira acertar a leitura da query.
+
+## Replay
+
+Assinatura válida não expira sozinha: quem capturar uma notificação legítima
+pode reenviá-la meses depois, e o HMAC continua batendo.
+
+Confira o `ts` do header contra uma **janela de tolerância** — minutos, não
+horas — e recuse o que estiver fora. Some a isso a deduplicação por
+identificador já processado.
 
 ## Depois de validar
 
 A assinatura prova que a notificação veio do Mercado Pago. **Não prova o que
-aconteceu** — o corpo traz só um identificador.
+aconteceu** — o corpo traz metadados (tipo, ação, data, modo), mas nenhum estado
+em que se possa fechar um pedido.
 
 1. Busque o pagamento em `GET /v1/payments/{id}`
 2. Confira `currency_id`, `transaction_amount` e `external_reference` contra o
-   seu pedido
+   seu pedido. Com mais de uma conta ou aplicação, confira também `live_mode` e
+   o recebedor esperado — e não deixe um pedido já ligado a um pagamento ser
+   reassociado a outro
 3. Só então mude o estado
+
+## Concorrência
+
+Duas notificações do mesmo pagamento podem ser processadas ao mesmo tempo, cada
+uma lendo o estado antes de a outra gravar. Leitura, decisão e gravação vão numa
+**transação** com trava por pedido. Sem isso, a tabela de transições não
+protege: as duas passam pela mesma verificação e as duas aplicam.
 
 ## Filtrar o tipo
 
 Chegam notificações de `merchant_order` para o mesmo pagamento, com outro
 identificador. Buscar esse id em `/v1/payments` devolve 404 a cada notificação.
-Filtre por `type == 'payment'` e responda 200 ao resto.
+Filtre por `type == 'payment'` e responda 200 ao resto — responder erro faria o
+provedor reentregar para sempre algo que você decidiu ignorar.
 
 ## Responder
 
-Responda rápido, com 2xx. Processamento demorado dentro do handler leva a
-timeout, e timeout vira reentrega — por isso a idempotência não é opcional.
+A ordem importa mais que a pressa: **valide, persista de forma durável, e só
+então responda 2xx**. Responder 2xx antes de gravar e cair em seguida perde a
+notificação para sempre — o provedor considera entregue e não reenvia.
+
+Se não deu para persistir, responda erro **de propósito**, para provocar a
+reentrega.
+
+Processamento demorado dentro do handler leva a timeout, e timeout vira
+reentrega — por isso a idempotência não é opcional. Trabalho pesado (e-mail,
+estoque, entrega) sai do handler para uma fila.
+
+Mantenha um job de reconciliação para pagamentos que ficaram sem atualização:
+webhook perdido não avisa que se perdeu.
 
 ## Em desenvolvimento
 

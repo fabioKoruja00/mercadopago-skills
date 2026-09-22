@@ -3,21 +3,25 @@
 Skills de agente para integração com o **Mercado Pago** no Brasil: Checkout
 Transparente, Payment Brick, PIX, boleto, cartão e webhooks.
 
-Compatível com [Claude Code](https://claude.com/claude-code), Claude Agent SDK e
-qualquer agente que leia skills no formato `SKILL.md` com frontmatter.
+Escrita e testada no [Claude Code](https://claude.com/claude-code), onde a skill
+é descoberta sozinha pela `description` e invocável por `/mercadopago-checkout`.
+
+Em outras ferramentas, a descoberta automática e o comando dependem do suporte
+de cada uma a skills no formato `SKILL.md` com frontmatter. Os arquivos são
+Markdown comum e servem como referência mesmo onde não houver esse suporte.
 
 ## O que tem aqui
 
 ### `mercadopago-checkout`
 
-Referência de integração completa. O `SKILL.md` carrega o que decide a
+Referência de integração. O `SKILL.md` carrega o que decide a
 arquitetura; os arquivos de `references/` são lidos sob demanda, conforme a
 tarefa.
 
 | Arquivo | Conteúdo |
 |---|---|
 | `SKILL.md` | As regras que decidem a integração, ciclo de estado do pedido e tabela de armadilhas |
-| `references/pagamentos.md` | Campos de `POST /v1/payments`, os 9 valores de `status`, `status_detail` por status, motivos de recusa de cartão |
+| `references/pagamentos.md` | Campos de `POST /v1/payments`, os 9 valores de `status`, exemplos de `status_detail` (lista não exaustiva), motivos de recusa de cartão |
 | `references/pix-boleto.md` | Campos exigidos, caminho exato do QR Code e da URL do boleto, prazos de expiração |
 | `references/webhooks.md` | Manifesto do `x-signature`, configuração no painel, o que conferir depois de validar |
 | `references/brick.md` | Payment Brick (SDK JS v2): inicialização, callbacks, meios de pagamento e parcelas |
@@ -52,17 +56,21 @@ estão em destaque na documentação. Alguns que esta skill trata de frente:
 - **Valores são em reais, não em centavos** — diferente da maioria dos
   gateways. Multiplicar por 100 cobra 100× a mais, e o erro aparece na fatura
   de alguém.
-- **A assinatura do webhook usa o `data.id`**, que chega tanto na query quanto
-  no corpo, e as grafias podem divergir — é a causa mais comum de `401` em toda
-  notificação legítima.
+- **A assinatura do webhook usa o `data.id` que vem na query**, e cada framework
+  expõe esse parâmetro com um nome diferente — é a causa mais comum de `401` em
+  toda notificação legítima.
 - **A notificação chega repetida e fora de ordem.** Comparar só a data deixa
   passar a repetida, que vem com data igual; só a tabela de transições deixa
   passar a antiga. Precisa dos dois.
-- **`X-Idempotency-Key` precisa viver com o pedido**, não com a requisição —
-  senão o retry vira cobrança dupla.
-- **O corpo do webhook não diz o que aconteceu**, só carrega um identificador.
-  Depois de validar a assinatura, busque o pagamento na API e confira valor,
-  moeda e `external_reference` antes de mudar qualquer estado.
+- **`X-Idempotency-Key` pertence à tentativa de pagamento**, não ao pedido.
+  Repetir a chave com o mesmo corpo é o que impede a cobrança dupla no timeout;
+  uma nova tentativa do comprador, com token novo, precisa de chave nova.
+- **O corpo do webhook não diz o que aconteceu** em que se possa fechar um
+  pedido. Depois de validar a assinatura, busque o pagamento na API e confira
+  valor, moeda e `external_reference` antes de mudar qualquer estado.
+- **Assinatura válida não expira sozinha.** Sem conferir o `ts` contra uma
+  janela de tolerância, uma notificação capturada pode ser reenviada meses
+  depois e continuará passando.
 
 ## Validade do conteúdo
 

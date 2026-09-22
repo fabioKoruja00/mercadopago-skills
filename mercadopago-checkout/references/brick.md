@@ -34,7 +34,7 @@ const brick = await mp.bricks().create('payment', 'paymentBrick_container', {
 | Callback | Papel |
 |---|---|
 | `onReady` | o Brick terminou de renderizar — esconder o carregando |
-| `onSubmit` | **deve devolver Promise**: `resolve()` mostra sucesso, `reject()` mantém o formulário para nova tentativa |
+| `onSubmit` | **deve devolver a Promise** (`return`): só resolva **depois** da resposta do backend, nunca antes; `reject()` mantém o formulário para nova tentativa. `pending` e `in_process` não são sucesso — têm tela própria |
 | `onError` | todos os erros do Brick |
 
 Ao sair da tela, chame `unmount()`. Em componente React, isso vai na limpeza do
@@ -47,20 +47,31 @@ Não há schema formal publicado. Na prática vem no formato do corpo de
 `installments`, `payment_method_id`, `issuer_id`, `payer.email`,
 `payer.identification.type`, `payer.identification.number`.
 
-**Repasse ao seu backend, nunca direto ao Mercado Pago.** O backend substitui o
-`transaction_amount` pelo total que ele mesmo calculou, valida as parcelas e
-acrescenta o `X-Idempotency-Key`. O que vem do navegador é pedido, não ordem.
+**Repasse ao seu backend, nunca direto ao Mercado Pago** — e não encaminhe o
+`formData` inteiro adiante. Substituir só o `transaction_amount` deixa passar
+parcelas, meio de pagamento, descrição e referência vindos do cliente.
+
+Use uma **lista de permissão**: do navegador, aceite apenas `token`,
+`payment_method_id`, `issuer_id`, `installments` e os dados do `payer`. Quem
+define `transaction_amount`, `external_reference`, descrição, itens, teto de
+parcelas e meios aceitos é o servidor. O que vem do navegador é pedido, não
+ordem.
 
 Se o Brick monta uma vez e o carrinho muda depois, o `onSubmit` fecha sobre o
 estado antigo. Guarde o pedido atual numa referência mutável e leia dela dentro
 do callback.
+
+Isso resolve o estado velho na tela, **não** adulteração: mande ao backend um
+identificador do checkout e deixe o servidor carregar o pedido, conferir a quem
+pertence, se ainda vale e em que estado está, antes de criar a tentativa.
 
 ## Meios de pagamento
 
 - `creditCard` / `debitCard` / `prepaidCard`: `'all'` ou lista de ids
 - `bankTransfer`: `'pix'`
 - `ticket`: `'bolbradesco'`
-- `mercadoPago`: `'onboarding_credits'`, `'wallet_purchase'`
+- `mercadoPago`: conta e crédito do Mercado Pago — o nome e o formato da chave
+  mudaram entre versões do SDK; confira na documentação da versão que você usa
 
 Para **não** exibir um meio, remova a chave — não existe valor "desligado".
 
