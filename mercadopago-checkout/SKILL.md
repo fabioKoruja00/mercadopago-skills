@@ -78,15 +78,16 @@ A leitura do estado, a decisão e a gravação têm de acontecer numa **transaç
 
 | Sintoma | Causa | Conserto |
 |---|---|---|
-| Webhook 401 em toda notificação | manifesto montado com o `data.id` errado — query e corpo divergem em grafia | conferir os dois candidatos contra o mesmo HMAC; tentar mais de um não afrouxa nada |
+| Webhook 401 em toda notificação | manifesto montado com o `data.id` errado | o valor vem da **query**; o que muda entre frameworks é o nome da chave, não a fonte |
 | Assinatura só falha em produção | segredo de teste e de produção são **diferentes** por aplicação | pegar o segredo do ambiente ativo, não reusar |
-| Cobrança dupla no retry | `X-Idempotency-Key` nova a cada tentativa | chave presa ao pedido |
+| Cobrança dupla após timeout | chave nova no retry técnico | repetir a **mesma chave com o mesmo corpo** da chamada que deu timeout |
 | Valor 100× errado | tratado como centavos | reais, decimal |
 | Reembolso parcial some do pedido | `approved` tratado como valor cheio | `approved/accredited` libera; `approved/partially_refunded` exige atualizar o valor devolvido |
 | Estado novo do provedor libera pedido | `switch` com `default` otimista | valor desconhecido é estado **não conclusivo**: registre e reconcilie, nunca libere |
 | Webhook nunca chega em dev | o Mercado Pago não alcança localhost | túnel público, ou o botão de simular no painel |
 | 404 a cada notificação | `merchant_order` tratado como pagamento | filtrar `type == 'payment'` |
-| Token de cartão recusado no retry | token do front é de uso único | token novo a cada tentativa |
+| Chave de idempotência recusada | mesma chave reusada com corpo diferente | nova tentativa do comprador é **outra** tentativa: token novo, chave nova |
+| Token de cartão recusado no retry | token do front é de uso único | token novo a cada nova tentativa |
 | Boleto "demora demais" | confirmação não é instantânea após o pagamento | não é bug; ver o prazo em `references/pix-boleto.md` |
 | Assinatura válida reaproveitada depois | `ts` do header não conferido | rejeitar fora de uma janela de tolerância; HMAC válido sem prazo vale para sempre |
 | Estorno não reflete | `refunded`/`charged_back` tratados como "não aprovado" | são estados próprios, com efeito próprio |
