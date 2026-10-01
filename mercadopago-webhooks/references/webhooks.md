@@ -47,9 +47,8 @@ O que varia é **o nome da chave que o seu framework expõe** — `data.id`,
 
 Normalize o id para minúsculas antes de montar o manifesto.
 
-Aceitar também o id do corpo como candidato não abre brecha (todo candidato
-passa pelo mesmo HMAC, e sem o segredo nenhum bate), mas é tolerar uma
-divergência que não deveria existir. Prefira acertar a leitura da query.
+Não substitua pelo id do corpo para contornar uma assinatura inválida. Confira
+a extração do parâmetro de query e o formato do manifesto documentado.
 
 ## Replay
 

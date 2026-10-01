@@ -1,6 +1,7 @@
 # As ferramentas
 
-Servidor: `mercadopago-mcp-server`, versão 1.0.0.
+Fonte: https://www.mercadopago.com.br/developers/pt/docs/mcp-server/tools
+Confira a lista atual antes de invocar uma ferramenta: o servidor pode mudar.
 
 ## Leitura — seguras
 
@@ -12,12 +13,11 @@ em nada da conta.
 Lista as aplicações da conta, com `AppID`, `AppName` e descrição. Serve para
 descobrir o id que as outras ferramentas pedem.
 
-### `notifications_history`
-Histórico de entrega das notificações de webhook, com status e motivo de falha.
+### `notifications_history_diagnostics`
+Diagnóstico do histórico de entrega das notificações de webhook, com métricas e falhas.
 
-**"No notifications found" é ambíguo:** significa tanto webhook não configurado
-quanto nenhum evento gerado ainda. Pagamento que nasce pendente e nunca é pago
-não produz notificação — não confunda silêncio com falha de entrega.
+**Histórico vazio é ambíguo:** pode significar ausência de eventos ou de
+configuração. Confira a configuração e o histórico na aplicação.
 
 ### `quality_checklist`
 Os campos que o Mercado Pago avalia na integração. Bom para saber o que a
@@ -60,13 +60,8 @@ simultâneas, e elas **não podem ser apagadas**.
 |---|---|---|
 | `payment_id` | **número** | integração por Payments API (Checkout API/Pro) |
 | `order_id` | **texto** | integração por Orders API |
-| `application_id` | texto | a aplicação avaliada |
 
-Exige pagamento ou pedido **feito com credenciais de teste nos últimos 7 dias**.
+Exige identificador de pagamento **produtivo**. A documentação oficial não
+especifica aqui uma janela de sete dias; não presuma esse limite.
 
-Pagamento de produção é recusado, e a mensagem não diz o motivo real — vem um
-erro interno sobre `product_id` ausente. Quem não leu o schema perde tempo
-tentando outros parâmetros.
-
-Tipo errado também falha: `payment_id` como texto devolve erro de validação
-pedindo número.
+Informe ao menos um dos dois identificadores, com o tipo documentado.

@@ -46,9 +46,11 @@ São **dois prazos diferentes**, e confundi-los gera expectativa errada:
   de pago. A documentação cita até 2 horas úteis; na prática varia com o banco.
   Não derive o vencimento desse prazo.
 
-Boleto não pago simplesmente **expira** (`cancelled` / `expired`) — não há valor
-a devolver. O que gera devolução é o boleto **pago após o vencimento**, caso em
-que o valor volta ao comprador e o pedido não deve ser liberado.
+Boleto vencido ainda `pending` ou `in_process` deve ser cancelado quando
+aplicável; a documentação informa cancelamento automático se o vencimento
+ocorrer em 30 dias. Não suponha que todo boleto não pago muda de estado
+imediatamente no vencimento. Se for pago após a expiração, o Mercado Pago
+informa que o valor volta à conta do pagador; não libere o pedido.
 
 ## Fontes
 

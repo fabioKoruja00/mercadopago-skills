@@ -52,21 +52,22 @@ acesso à conta. O escopo pedido é `offline_access write read`: o MCP passa a
 **escrever** na conta, podendo criar aplicação e alterar webhook. Não rode como
 "só um teste" sem querer conceder isso.
 
-## As 11 ferramentas
+## As 10 ferramentas documentadas
+
+Confira a [lista oficial atual](https://www.mercadopago.com.br/developers/pt/docs/mcp-server/tools) antes de usar: nomes e disponibilidade podem mudar.
 
 | Ferramenta | O que faz |
 |---|---|
-| `search_documentation` | busca na documentação oficial — leitura pura |
+| `search-documentation` | busca na documentação oficial — leitura pura; confirme o nome exposto pelo cliente |
 | `application_list` | lista as aplicações da conta |
 | `create_application` | cria aplicação |
 | `get_credentials` | client id/secret, access token e public key, produção **e** teste |
 | `save_webhook` | grava a URL e os tópicos do webhook |
-| `notifications_history` | histórico de entrega das notificações, com falhas |
+| `notifications_history_diagnostics` | diagnóstico do histórico de notificações |
 | `quality_checklist` | os campos que o Mercado Pago avalia |
 | `quality_evaluation` | avalia a integração a partir de um pagamento |
 | `create_test_user` | cria usuário de teste |
 | `add_money_test_user` | põe saldo no usuário de teste |
-| `form_homologation` | formulário de homologação |
 
 Detalhe de cada uma, com o que medi dos schemas, em
 [references/ferramentas.md](references/ferramentas.md).
@@ -82,10 +83,10 @@ real.** Uma aplicação já configurada e testada pode ser alterada por uma cham
 distraída. Em conta com integração em produção, prefira as ferramentas de
 leitura e confirme antes de escrever.
 
-**`quality_evaluation` exige pagamento feito com credencial de TESTE**, dos
-últimos 7 dias. Pagamento de produção é recusado com erro que não diz isso — o
-schema é que avisa. Use `payment_id` (número) para Payments API e `order_id`
-(texto) para Orders API; mandar o campo errado falha.
+**`quality_evaluation` usa pagamento produtivo real**, conforme a documentação
+oficial. Use `payment_id` (número) para Payments API e `order_id` (texto)
+para Orders API. Não envie um pagamento de teste nem afirme prazo máximo sem
+consultar a documentação vigente.
 
 ## Quando o conector não aparece
 

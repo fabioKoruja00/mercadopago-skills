@@ -1,109 +1,50 @@
 # mercadopago-skills
 
-Skills de agente para integração com o **Mercado Pago** no Brasil: Checkout
-Transparente, Payment Brick, PIX, boleto, cartão e webhooks.
+Skills independentes para integrar o Mercado Pago no Brasil. São arquivos
+`SKILL.md` com referências lidas conforme a tarefa, compatíveis com agentes
+que adotam esse formato.
 
-Escrita e testada no [Claude Code](https://claude.com/claude-code), onde a skill
-é descoberta sozinha pela `description` e invocável por `/mercadopago-checkout`.
-
-Em outras ferramentas, a descoberta automática e o comando dependem do suporte
-de cada uma a skills no formato `SKILL.md` com frontmatter. Os arquivos são
-Markdown comum e servem como referência mesmo onde não houver esse suporte.
-
-## O que tem aqui
-
-### `mercadopago-checkout`
-
-Referência de integração. O `SKILL.md` carrega o que decide a
-arquitetura; os arquivos de `references/` são lidos sob demanda, conforme a
-tarefa.
-
-| Arquivo | Conteúdo |
+| Skill | Use para |
 |---|---|
-| `SKILL.md` | As regras que decidem a integração, ciclo de estado do pedido e tabela de armadilhas |
-| `references/pagamentos.md` | Campos de `POST /v1/payments`, os 9 valores de `status`, exemplos de `status_detail` (lista não exaustiva), motivos de recusa de cartão |
-| `references/pix-boleto.md` | Campos exigidos, caminho exato do QR Code e da URL do boleto, prazos de expiração |
-| `references/webhooks.md` | Manifesto do `x-signature`, configuração no painel, o que conferir depois de validar |
-| `references/brick.md` | Payment Brick (SDK JS v2): inicialização, callbacks, meios de pagamento e parcelas |
-| `references/testes.md` | Cartões de teste, códigos que forçam aprovação e recusa, contas de teste |
+| [mercadopago-checkout](mercadopago-checkout/SKILL.md) | Payments API: PIX, boleto, cartão, valor, tentativas e estados |
+| [mercadopago-payment-brick](mercadopago-payment-brick/SKILL.md) | interface Payment Brick, callbacks, meios e parcelas |
+| [mercadopago-webhooks](mercadopago-webhooks/SKILL.md) | assinatura, notificações, reentrega e conciliação |
+| [mercadopago-mcp-server](mercadopago-mcp-server/SKILL.md) | instalação e uso do MCP Server oficial |
 
-### `mercadopago-mcp-server`
-
-Instalar, autenticar e usar o MCP Server oficial do Mercado Pago
-(`https://mcp.mercadopago.com/mcp`) em Claude Code, Claude Desktop, Cursor, VS
-Code, Windsurf ou Cline.
-
-| Arquivo | Conteúdo |
-|---|---|
-| `SKILL.md` | Transporte que funciona, as 11 ferramentas e o que cada uma faz com a conta |
-| `references/instalacao.md` | Comando por cliente, formato do arquivo de configuração e as armadilhas do Windows |
-| `references/ferramentas.md` | Parâmetros e tipos de cada ferramenta, separadas entre leitura, exposição de segredo e escrita |
-| `references/diagnostico.md` | Roteiro para quando o conector não aparece, e como falar com o servidor sem cliente nenhum |
+As referências técnicas ficam em `references/` dentro de cada skill. Cada
+arquivo cita as páginas usadas. A divisão evita carregar instruções de
+frontend ou webhooks quando a tarefa é apenas criar uma cobrança.
 
 ## Instalação
 
-Copie a pasta da skill para onde seu agente procura skills.
+Copie as quatro pastas `mercadopago-*` para o diretório global de skills do
+agente, por exemplo `~/.codex/skills/` ou `~/.claude/skills/`. Para instalar
+apenas em um projeto, copie para o diretório de skills desse projeto. A
+descoberta automática depende do suporte do agente a `SKILL.md`.
 
-**Claude Code, no usuário** (vale para todos os projetos):
+O MCP Server do Mercado Pago é um serviço separado das skills; instalar os
+arquivos não conecta nem autoriza o MCP.
 
-```bash
-git clone https://github.com/fabioKoruja00/mercadopago-skills.git
-cp -r mercadopago-skills/mercadopago-checkout ~/.claude/skills/
-```
+## Fontes e limites
 
-**Em um projeto só:**
+O conteúdo foi redigido a partir de documentação pública do
+[Mercado Pago Developers](https://www.mercadopago.com.br/developers/pt),
+levantada em setembro de 2026 e revisada em outubro de 2026. Fontes principais:
 
-```bash
-cp -r mercadopago-skills/mercadopago-checkout <seu-projeto>/.claude/skills/
-```
+- [Checkout API via Payments API](https://www.mercadopago.com.br/developers/pt/docs/checkout-api-payments/)
+- [Payment Brick](https://www.mercadopago.com.br/developers/pt/docs/checkout-bricks/payment-brick/default-rendering)
+- [Webhooks](https://www.mercadopago.com.br/developers/pt/docs/checkout-api-payments/additional-content/your-integrations/notifications/webhooks)
+- [Ferramentas do MCP Server](https://www.mercadopago.com.br/developers/pt/docs/mcp-server/tools)
+- [Cartões de teste](https://www.mercadopago.com.br/developers/pt/docs/your-integrations/test/cards)
 
-O agente passa a casar a skill sozinho pela `description` quando a tarefa
-envolve cobrança, checkout, confirmação de pagamento ou depuração de webhook.
-Para chamar à mão no Claude Code: `/mercadopago-checkout`.
+Estas skills resumem decisões de integração e não reproduzem nem substituem
+a documentação oficial. Produtos, parâmetros, prazos e ferramentas podem
+mudar; confira a página vinculada antes de implementar ou publicar pagamentos.
+Nenhuma credencial deve ser incluída no repositório nem em conversas.
 
-## Por que existe
+## Licença e autoria
 
-Os erros que derrubam uma integração com o Mercado Pago em produção quase nunca
-estão em destaque na documentação. Alguns que esta skill trata de frente:
-
-- **Valores são em reais, não em centavos** — diferente da maioria dos
-  gateways. Multiplicar por 100 cobra 100× a mais, e o erro aparece na fatura
-  de alguém.
-- **A assinatura do webhook usa o `data.id` que vem na query**, e cada framework
-  expõe esse parâmetro com um nome diferente — é a causa mais comum de `401` em
-  toda notificação legítima.
-- **A notificação chega repetida e fora de ordem.** Comparar só a data deixa
-  passar a repetida, que vem com data igual; só a tabela de transições deixa
-  passar a antiga. Precisa dos dois.
-- **`X-Idempotency-Key` pertence à tentativa de pagamento**, não ao pedido.
-  Repetir a chave com o mesmo corpo é o que impede a cobrança dupla no timeout;
-  uma nova tentativa do comprador, com token novo, precisa de chave nova.
-- **O corpo do webhook não diz o que aconteceu** em que se possa fechar um
-  pedido. Depois de validar a assinatura, busque o pagamento na API e confira
-  valor, moeda e `external_reference` antes de mudar qualquer estado.
-- **Assinatura válida não expira sozinha.** Sem conferir o `ts` contra uma
-  janela de tolerância, uma notificação capturada pode ser reenviada meses
-  depois e continuará passando.
-
-## Validade do conteúdo
-
-Skill não se atualiza sozinha, e esta não tem um projeto a montante de onde
-puxar correção: **o que envelhece aqui é a documentação do Mercado Pago**.
-
-Cada arquivo de `references/` termina com as URLs oficiais de onde os fatos
-saíram. Antes de apoiar uma decisão séria nesta skill, abra as fontes do arquivo
-que você está usando e confira se ainda batem.
-
-Os fatos foram levantados da documentação oficial em
-[mercadopago.com.br/developers](https://www.mercadopago.com.br/developers/pt) em
-setembro de 2026.
-
-Nenhum valor daqui vale como credencial, e nenhuma decisão de negócio deve sair
-só da leitura desta skill — teste contra o ambiente de teste do provedor.
-
-## Licença
-
-MIT — veja [LICENSE](LICENSE).
-
-Este projeto não tem vínculo com o Mercado Pago. "Mercado Pago" é marca de seus
-respectivos donos; aqui é citada apenas para identificar a integração descrita.
+[MIT](LICENSE). **Projeto independente e não oficial.** Estas skills não
+são produzidas, mantidas, aprovadas nem endossadas pelo Mercado Pago e não
+têm vínculo com a empresa. A marca é citada apenas para identificar a
+integração descrita.

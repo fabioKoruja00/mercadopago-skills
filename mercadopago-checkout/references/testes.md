@@ -11,7 +11,9 @@
 
 ## Forçar o resultado
 
-O resultado vem do **nome do titular**, com CPF `12345678909`:
+O resultado vem do **nome do titular**. A documentação informa CPF
+`12345678909` para `APRO` e `OTHE`; confira os dados exigidos para os outros
+cenários na página oficial:
 
 | Nome | Resultado |
 |---|---|
