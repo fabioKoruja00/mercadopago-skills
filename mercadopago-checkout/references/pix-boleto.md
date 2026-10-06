@@ -19,6 +19,10 @@ limite entre **30 minutos e 30 dias**.
 O pagamento pode cair depois do prazo do seu contador na tela, dependendo do
 PSP. Nunca libere pelo relógio do front: consulte o estado na API.
 
+Na tela, o QR (`qr_code_base64`) e um botão que copia `qr_code` bastam. Mostre
+o texto do copia e cola só se `navigator.clipboard` falhar, já selecionado e
+anunciado em `role="status"`, para quem não consegue copiar ter alternativa.
+
 ## Boleto
 
 `payment_method_id: "bolbradesco"`.

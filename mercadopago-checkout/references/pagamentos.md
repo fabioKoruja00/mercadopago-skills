@@ -90,6 +90,15 @@ estado não conclusivo: registre e reconcilie, nunca libere o pedido por padrão
 **Antifraude** — não explique o motivo ao comprador:
 `cc_rejected_blacklist`, `cc_rejected_high_risk`, `cc_rejected_other_reason`.
 
+## Estorno de pedido com frete comprado
+
+Se o pedido já tem etiqueta de frete paga (Melhor Envio ou outro), cancele a
+etiqueta antes e só estorne no Mercado Pago com o cancelamento confirmado.
+Estornar primeiro deixa o frete pago sem venda. Se o estorno falhar depois da
+etiqueta cancelada, o pedido continua pago e sem etiqueta; repetir o
+cancelamento deve pular a etiqueta e tentar só o estorno, com a mesma
+`X-Idempotency-Key` por pedido para não estornar duas vezes.
+
 ## Fontes
 
 - https://www.mercadopago.com.br/developers/pt/docs/checkout-api-payments/response-handling/query-results
