@@ -1,9 +1,13 @@
 ---
 name: untangle-codebase
-description: Untangle a whole codebase in one pass, so agents working in it read less per change, break less without noticing, and debug faster.
-disable-model-invocation: true
+description: Untangle a codebase so agents read less per change, break less without noticing, and debug faster. Use when refactoring structure, moving files, removing duplicated logic or values, or before committing a refactor.
 argument-hint: "[optional area or concern to focus on]"
 ---
+
+## Na casa (GRNET)
+
+- Sem subagentes: o que a skill manda delegar roda inline (grep, grafo de imports, `git log --name-only`).
+- Lote pequeno: entregue a lista (etapa 2) e as correções (etapa 3); cada correção vira issue e PR própria que cabe num `git revert`. Nada de refatorar o repo inteiro de uma vez.
 
 Start a thorough refactor of this codebase and complete it to the end.
 
