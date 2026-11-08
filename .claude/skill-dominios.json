@@ -4,5 +4,5 @@
     {"dominio": "documentação do repo", "caminho": "/(README|LICENSE)(\\.md)?$", "skills": ["writing-guidelines", "living-docs-governance", "skill-creator"]}
   ],
   "comandos": [],
-  "sem_arquivo": []
+  "sem_arquivo": ["untangle-codebase"]
 }
